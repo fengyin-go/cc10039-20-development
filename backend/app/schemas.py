@@ -29,3 +29,16 @@ class EntryPayload(BaseModel):
 class ActionPayload(BaseModel):
     action: str
     remark: str | None = None
+
+
+class ImportPayload(BaseModel):
+    file_name: str
+    content: str
+    default_table: str = ""
+    remark: str | None = None
+
+
+class PartitionRegisterPayload(BaseModel):
+    pack_id: int | None = None
+    dates: list[str] | None = None
+    limit: int | None = None

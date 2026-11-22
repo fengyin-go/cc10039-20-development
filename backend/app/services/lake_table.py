@@ -47,6 +47,22 @@ class LakeTableService(BaseModuleService):
                 "active_policy_count": len(active_policies),
             })
 
+        # 1.1) 从注册分区规则包读取规则：写入分区键，并领取第一片待登记分区。
+        from app.services import service_for
+
+        rule_pack = service_for("partition_rule_pack")
+        if rule_pack is not None:
+            pending = rule_pack.pending_lines(table_name)
+            if pending:
+                entry["分区键"] = pending[0]["分区字段"]
+                result = rule_pack.register_partitions(
+                    table_name, entry_id=entry_id, limit=1)
+                store.log_event("lake_table_claimed_partitions", "lake_table", "partition_rule_pack", {
+                    "table_id": entry_id,
+                    "table_name": table_name,
+                    "registered": len(result["registered"]),
+                })
+
         # 2) 自身状态流转
         entry["status"] = "已注册"
         entry["pending"] = False

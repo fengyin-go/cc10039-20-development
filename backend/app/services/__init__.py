@@ -22,6 +22,7 @@ from app.services.alert_rule import AlertRuleService
 from app.services.cost_report import CostReportService
 from app.services.lineage_graph import LineageGraphService
 from app.services.govern_report import GovernReportService
+from app.services.partition_rule_pack import PartitionRulePackService
 
 SERVICES: dict[str, BaseModuleService] = {
     "partition_policy": PartitionPolicyService(),
@@ -44,6 +45,7 @@ SERVICES: dict[str, BaseModuleService] = {
     "cost_report": CostReportService(),
     "lineage_graph": LineageGraphService(),
     "govern_report": GovernReportService(),
+    "partition_rule_pack": PartitionRulePackService(),
 }
 
 

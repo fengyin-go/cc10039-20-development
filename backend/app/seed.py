@@ -543,5 +543,9 @@ SEED_ROWS: dict[str, list[dict[str, Any]]] = {
   '治理指标': '治理报告样例3',
   '优化建议': '治理报告样例3',
   '执行状态': '治理报告样例3',
-  '审批状态': '治理报告样例3'}]
+  '审批状态': '治理报告样例3'}],
+    # 以下模块由分区策略文件导入后动态产生记录，初始为空。
+    "partition_rule_pack": [],
+    "partition_rule_line": [],
+    "lake_partition": [],
 }

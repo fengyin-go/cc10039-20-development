@@ -51,6 +51,7 @@ npm run dev
 | 模块 | 目录 | 业务对象 | 主要字段 |
 | --- | --- | --- | --- |
 | 分区策略 | `partition_policy` | 分区策略 | 策略名称、分区维度、分区粒度 |
+| 注册分区规则包 | `partition_rule_pack` | 分区规则包 | 规则包名称、来源文件、目标湖表、覆盖日期数 |
 | 湖表注册 | `lake_table` | 湖表 | 表名、所属业务域、存储格式 |
 | 冷热分层 | `storage_tier` | 分层策略 | 策略名称、热层阈值、冷层阈值 |
 | 小文件合并 | `file_compaction` | 合并任务 | 任务编号、目标湖表、文件阈值 |
@@ -81,3 +82,37 @@ npm run dev
 
 领域：数据工程
 子方向：数仓与数据湖
+
+## 注册分区规则包（文件导入）
+
+分区策略支持从文件导入，补齐「分区策略缺少文件导入能力」这一环：
+
+```text
+分区策略文件 → 逐行校验(目标表/日期/分区粒度) → 注册分区规则包
+→ 湖表注册按日期领取分区 → 湖表分区台账(可追到文件与行号)
+```
+
+- 文件格式：CSV/TSV/分号/竖线分隔文本、JSON 数组、JSONL；
+  列名支持 `目标表|表名|table`、`日期|dt|date`、`分区粒度|granularity`，
+  可选 `分区字段`。未写目标表时可用 `default_table` 兜底。
+- 粒度只有 `day`/`month`/`hour`/`year`（及 `1d`/`天`/`月` 等别名）；
+  日期必须与粒度匹配，不匹配的行记为「校验失败」，不会进入任何湖表记录。
+- 同一 `表 + 日期` 在同一时刻只有一条生效规则：已登记日期锁定原来源文件，
+  尚待登记的日期以较晚导入的文件为准，其余同日期行标记「已失效」并写明原因。
+- 文件按内容指纹去重，重复导入只返回已有规则包，不会重复登记分区。
+
+接口：
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/partition_rule_pack/import` | 导入分区策略文件（`file_name` + `content`） |
+| GET | `/api/partition_rule_pack/{id}/lines` | 规则包逐行校验与登记结果 |
+| GET | `/api/partition_rule_pack/{id}/partitions` | 规则包写出的湖表分区 |
+| GET | `/api/partition_rule/rules?table=&date=` | 查询各日期生效规则及来源 |
+| GET | `/api/lake_table/{id}/pending-partitions` | 该湖表尚待登记的日期 |
+| POST | `/api/lake_table/{id}/register-partitions` | 领取分区（`dates` 指定日期，`limit` 取第一片） |
+| GET | `/api/lake_table/{id}/partitions` | 湖表分区台账（含文件与行号） |
+
+典型流程：导入文件 A（09-01~09-03）→ 湖表注册领走第一片 09-01 →
+导入交叠的文件 B（09-02~09-04），09-02/09-03 的规则改由 B 提供 →
+补录 09-02~09-04 → 重传 B 只记一次。

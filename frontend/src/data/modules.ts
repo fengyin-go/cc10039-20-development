@@ -14,6 +14,18 @@ export const MODULES: ModuleMeta[] = [
     metrics: ["策略总数", "生效策略", "管理湖表数"],
   },
   {
+    key: "partition_rule_pack",
+    name: "注册分区规则包",
+    entity: "分区规则包",
+    desc: "导入分区策略文件，逐行校验目标表、日期与分区粒度，供湖表登记日期分区",
+    fields: ["规则包名称", "来源文件", "目标湖表", "覆盖日期数", "接收时间"],
+    statuses: ["已接收", "部分失败", "接收失败", "已登记", "已失效"],
+    actions: ["登记分区"],
+    actionTargets: { "登记分区": "已登记" },
+    metrics: ["规则包总数", "待登记规则包", "失败规则包"],
+    importable: true,
+  },
+  {
     key: "lake_table",
     name: "湖表注册",
     entity: "湖表",

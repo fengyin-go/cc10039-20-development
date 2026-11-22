@@ -59,3 +59,40 @@ export async function loadOverview(): Promise<OverviewResult> {
   if (!response.ok) throw new Error('运营概览读取失败')
   return await response.json()
 }
+
+export type RulePackImportResult = {
+  ok: boolean
+  duplicate: boolean
+  message: string
+  pack: EntryRow | null
+  lines: EntryRow[]
+  summary: Record<string, number>
+}
+
+export async function importRulePack(
+  fileName: string,
+  content: string,
+  defaultTable = '',
+): Promise<RulePackImportResult> {
+  const response = await request('/api/partition_rule_pack/import', {
+    method: 'POST',
+    body: JSON.stringify({
+      file_name: fileName,
+      content,
+      default_table: defaultTable,
+    }),
+  })
+  const payload = (await response.json()) as RulePackImportResult & { detail?: string }
+  if (!response.ok) throw new Error(payload.detail ?? '分区策略文件导入失败')
+  return payload
+}
+
+export async function fetchRulePackLines(packId: number): Promise<{
+  pack: EntryRow
+  summary: Record<string, number>
+  items: EntryRow[]
+}> {
+  const response = await request(`/api/partition_rule_pack/${packId}/lines`)
+  if (!response.ok) throw new Error('规则包明细读取失败')
+  return await response.json()
+}
